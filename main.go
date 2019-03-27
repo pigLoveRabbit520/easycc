@@ -41,3 +41,19 @@ func sendRequest(reqCC *CCRequest) *CCResponse {
 		Err:      err,
 	}
 }
+
+func CCTest(reqCC *CCRequest, concurrency uint) []*CCResponse {
+	chs := make([]chan *CCResponse, concurrency) // 保存请求结果
+	var index uint = 0
+	for index = 0; index < concurrency; index++ {
+		chs[index] = make(chan *CCResponse)
+		go func(ch chan *CCResponse) {
+			ch <- sendRequest(reqCC)
+		}(chs[index])
+	}
+	respArr := make([]*CCResponse, concurrency)
+	for index, ch := range chs {
+		respArr[index] = <-ch
+	}
+	return respArr
+}
