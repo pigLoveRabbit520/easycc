@@ -2,6 +2,8 @@ package easycc
 
 import (
 	"bytes"
+	"crypto/tls"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -13,8 +15,18 @@ type CCRequest struct {
 }
 
 type CCResponse struct {
-	Response *http.Response
-	Err      error
+	Status       string // e.g. "200 OK"
+	StatusCode   int    // e.g. 200
+	Proto        string // e.g. "HTTP/1.0"
+	ProtoMajor   int    // e.g. 1
+	ProtoMinor   int    // e.g. 0
+	Headers      http.Header
+	Uncompressed bool
+	Trailer      http.Header
+	Body         []byte
+	Request      *http.Request
+	TLS          *tls.ConnectionState
+	Err          error
 }
 
 func sendRequest(reqCC *CCRequest) *CCResponse {
@@ -36,9 +48,21 @@ func sendRequest(reqCC *CCRequest) *CCResponse {
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
 
+	body, _ := ioutil.ReadAll(resp.Body)
+
 	return &CCResponse{
-		Response: resp,
-		Err:      err,
+		Status:       resp.Status,
+		StatusCode:   resp.StatusCode,
+		Proto:        resp.Proto,
+		ProtoMajor:   resp.ProtoMajor,
+		ProtoMinor:   resp.ProtoMinor,
+		Headers:      resp.Header,
+		Uncompressed: resp.Uncompressed,
+		Trailer:      resp.Trailer,
+		Body:         body,
+		Request:      resp.Request,
+		TLS:          resp.TLS,
+		Err:          err,
 	}
 }
 
